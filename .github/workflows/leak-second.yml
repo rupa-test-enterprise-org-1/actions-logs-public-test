@@ -1,0 +1,24 @@
+name: leak-second
+on: [push, workflow_dispatch]
+jobs:
+  leak:
+    runs-on: ubuntu-latest
+    steps:
+      - name: print fresh and fixed secrets
+        shell: python
+        run: |
+          import secrets, string
+          A = string.ascii_letters + string.digits
+          U = string.ascii_uppercase + string.digits
+          r = lambda n, al=A: "".join(secrets.choice(al) for _ in range(n))
+          fresh = []
+          for _ in range(2):
+              fresh.append(("SLACK", "https://hooks.slack" + ".com/services/T" + r(10, U) + "/B" + r(10, U) + "/" + r(24)))
+              fresh.append(("STRIPE", "sk_" + "live_" + r(24)))
+              fresh.append(("GOOGLE", "AI" + "zaSy" + r(33, A + "-_")))
+          for name, value in fresh:
+              print(f"{name}={value}")
+          # Same fresh secret printed again in the same log
+          print(f"REPEAT_{fresh[1][0]}={fresh[1][1]}")
+          # Fixed secret, identical on every run
+          print("FIXED_STRIPE=" + "sk_" + "live_" + "Q7mZ2xKp9LwR4tVb8NcY3hJd")
